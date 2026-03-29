@@ -1,0 +1,31 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></h1>
+{% if user.is_anonymous %}
+  {% include "admin/color_theme_toggle.html" %}
+{% endif %}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <style>
+    html, body { max-width: 100%; overflow-x: hidden; }
+    #container { max-width: 100%; }
+    input, select, textarea { max-width: 100%; box-sizing: border-box; }
+    table { max-width: 100%; width: 100%; }
+    th, td { word-break: break-word; white-space: normal; }
+    .form-row, .module { max-width: 100%; }
+    /* Evita que elementos internos rompan el layout en pantallas pequeñas */
+    @media (max-width: 640px) {
+      .change-list table, .change-form table, #changelist-form table { display: block; }
+      .change-list th, .change-list td, #changelist-form th, #changelist-form td { display: block; }
+      .aligned label { display: block; }
+    }
+  </style>
+{% endblock %}
+
