@@ -1,12 +1,14 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import SearchBar from './SearchBar';
+import ThemeToggle from './ui/ThemeToggle';
 import { auth as authApi } from '../services/api';
+import { applyTheme, getStoredTheme, toggleThemeId } from '../theme/theme';
 
 function Brand() {
   return (
     <div className="flex items-center gap-3 shrink-0">
-      <div className="w-10 h-10 rounded-2xl bg-primary-600/10 dark:bg-primary-600/20 border border-primary-600/30 flex items-center justify-center">
+      <div className="w-10 h-10 rounded-2xl bg-accent-muted border border-[color:var(--color-border-accent)] dark:shadow-glow-sm flex items-center justify-center text-[var(--color-accent)]">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
             d="M9.5 3.5c-2 0-3.5 1.5-3.5 3.5v.4c-1.2.5-2 1.7-2 3v1c0 1.3.8 2.5 2 3v.4c0 2 1.5 3.5 3.5 3.5H14.5c2 0 3.5-1.5 3.5-3.5v-.4c1.2-.5 2-1.7 2-3v-1c0-1.3-.8-2.5-2-3V7c0-2-1.5-3.5-3.5-3.5H9.5Z"
@@ -29,10 +31,10 @@ function Brand() {
         </svg>
       </div>
       <div className="leading-tight">
-        <div className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+        <div className="text-lg sm:text-xl font-bold text-[var(--color-text)]">
           MultiLearn
         </div>
-        <div className="hidden sm:block text-xs text-slate-600 dark:text-slate-300">
+        <div className="hidden sm:block text-xs text-[var(--color-text-muted)]">
           Aprende sin límites, en un solo lugar
         </div>
       </div>
@@ -44,31 +46,33 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchOpen, setSearchOpen] = useState(false);
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+  const [theme, setTheme] = useState(getStoredTheme);
   const isLoggedIn = !!localStorage.getItem('access_token');
   const [profileName, setProfileName] = useState('');
+  const [isStaff, setIsStaff] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
 
   useEffect(() => {
-    const isDark = theme === 'dark';
-    document.documentElement.classList.toggle('dark', isDark);
-    localStorage.setItem('theme', theme);
+    applyTheme(theme);
   }, [theme]);
 
   useEffect(() => {
     const loadMe = async () => {
       if (!isLoggedIn) {
         setProfileName('');
+        setIsStaff(false);
         return;
       }
       setProfileLoading(true);
       try {
         const { data } = await authApi.me();
         setProfileName(data?.name || data?.email || '');
+        setIsStaff(!!data?.is_staff);
       } catch (e) {
         setProfileName('');
+        setIsStaff(false);
       } finally {
         setProfileLoading(false);
       }
@@ -136,10 +140,10 @@ export default function Navbar() {
     syncSearchRoute(q, { immediate: true });
   };
 
-  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+  const handleToggleTheme = () => setTheme((t) => toggleThemeId(t));
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/80 dark:bg-slate-950/80 backdrop-blur border-b border-slate-200 dark:border-slate-800 shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b border-[color:var(--color-border)] bg-[var(--color-header-bg)] backdrop-blur-md shadow-sm dark:shadow-[0_0_24px_rgba(0,255,136,0.06)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 md:h-16 gap-3">
           <Link to="/" className="flex items-center">
@@ -156,43 +160,11 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            <button
-              type="button"
-              className="p-2 rounded-lg text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900 transition"
-              onClick={() => toggleTheme()}
-              aria-label="Cambiar tema"
-              title="Tema"
-            >
-              {theme === 'dark' ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m16.95-6.95-.7.7M6.45 17.55l-.7.7m12.9 0-.7-.7M6.45 6.45l-.7-.7M12 7a5 5 0 100 10 5 5 0 000-10z"
-                  />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 18a6 6 0 100-12 6 6 0 000 12z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41"
-                  />
-                </svg>
-              )}
-            </button>
+            <ThemeToggle theme={theme} onToggle={handleToggleTheme} />
 
             <button
               type="button"
-              className="md:hidden p-2 rounded-lg text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900 transition"
+              className="md:hidden p-2 rounded-xl border border-[color:var(--color-border)] bg-[var(--color-bg-muted)] text-[var(--color-accent)] hover:border-[color:var(--color-border-accent)] transition"
               onClick={() => setSearchOpen(!searchOpen)}
               aria-label="Buscar"
             >
@@ -207,24 +179,24 @@ export default function Navbar() {
                   <button
                     type="button"
                     onClick={() => setProfileMenuOpen((v) => !v)}
-                    className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 transition"
+                    className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-xl border border-transparent hover:border-[color:var(--color-border)] hover:bg-[var(--color-bg-muted)] transition"
                     aria-label="Abrir menú de perfil"
                     title="Mi perfil"
                   >
-                    <span className="w-9 h-9 rounded-2xl bg-primary-600/10 dark:bg-primary-600/20 border border-primary-600/30 flex items-center justify-center">
+                    <span className="w-9 h-9 rounded-2xl bg-accent-muted border border-[color:var(--color-border-accent)] text-[var(--color-accent)] flex items-center justify-center">
                       {profileLoading ? (
-                        <span className="inline-block w-3 h-3 border-2 border-primary-600/60 border-t-transparent rounded-full animate-spin" />
+                        <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin opacity-70" />
                       ) : (
-                        <span className="text-primary-700 dark:text-primary-300 font-bold text-sm">{initials}</span>
+                        <span className="font-bold text-sm">{initials}</span>
                       )}
                     </span>
                   </button>
 
                   {profileMenuOpen && (
-                    <div className="fixed top-14 md:top-16 right-0 w-full max-w-xs sm:max-w-sm rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur shadow-lg overflow-hidden">
-                      <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-                        <div className="text-sm text-slate-600 dark:text-slate-300">Cuenta</div>
-                        <div className="text-slate-900 dark:text-white font-semibold break-words leading-tight">
+                    <div className="fixed top-14 md:top-16 right-0 w-full max-w-xs sm:max-w-sm rounded-2xl border border-[color:var(--color-border)] bg-[var(--color-bg-elevated)] backdrop-blur-md shadow-xl dark:shadow-glow overflow-hidden">
+                      <div className="p-4 border-b border-[color:var(--color-border)]">
+                        <div className="text-sm text-[var(--color-text-muted)]">Cuenta</div>
+                        <div className="text-[var(--color-text)] font-semibold break-words leading-tight">
                           {profileName || '—'}
                         </div>
                       </div>
@@ -236,10 +208,10 @@ export default function Navbar() {
                             setProfileMenuOpen(false);
                             navigate('/');
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm"
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[var(--color-bg-muted)] text-[var(--color-text)] text-sm"
                         >
-                          <span className="w-8 h-8 rounded-xl bg-primary-600/10 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-primary-700 dark:text-primary-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <span className="w-8 h-8 rounded-xl bg-accent-muted flex items-center justify-center text-[var(--color-accent)]">
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
                           </span>
@@ -252,10 +224,10 @@ export default function Navbar() {
                             setProfileMenuOpen(false);
                             navigate('/favorites');
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm"
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[var(--color-bg-muted)] text-[var(--color-text)] text-sm"
                         >
-                          <span className="w-8 h-8 rounded-xl bg-primary-600/10 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-primary-700 dark:text-primary-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <span className="w-8 h-8 rounded-xl bg-accent-muted flex items-center justify-center text-[var(--color-accent)]">
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
                           </span>
@@ -268,10 +240,10 @@ export default function Navbar() {
                             setProfileMenuOpen(false);
                             navigate('/recommendations');
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm"
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[var(--color-bg-muted)] text-[var(--color-text)] text-sm"
                         >
-                          <span className="w-8 h-8 rounded-xl bg-primary-600/10 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-primary-700 dark:text-primary-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <span className="w-8 h-8 rounded-xl bg-accent-muted flex items-center justify-center text-[var(--color-accent)]">
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
@@ -279,7 +251,25 @@ export default function Navbar() {
                           Recomendaciones
                         </button>
 
-                        <div className="h-px bg-slate-200 dark:bg-slate-800 my-2" />
+                        {isStaff && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setProfileMenuOpen(false);
+                              navigate('/admin-dashboard');
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[var(--color-bg-muted)] text-[var(--color-text)] text-sm"
+                          >
+                            <span className="w-8 h-8 rounded-xl bg-accent-muted flex items-center justify-center text-[var(--color-accent)]">
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v3m0 0v3m0-3h6m-6 0H6m9-9v3m0 0v3m0-3h3m-3 0h-3m-3-9v3m0 0v3m0-3h3m-3 0H6" />
+                              </svg>
+                            </span>
+                            Panel admin
+                          </button>
+                        )}
+
+                        <div className="h-px bg-[color:var(--color-border)] my-2" />
 
                         <button
                           type="button"
@@ -287,10 +277,10 @@ export default function Navbar() {
                             setProfileMenuOpen(false);
                             navigate('/profile');
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm"
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[var(--color-bg-muted)] text-[var(--color-text)] text-sm"
                         >
-                          <span className="w-8 h-8 rounded-xl bg-primary-600/10 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-primary-700 dark:text-primary-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <span className="w-8 h-8 rounded-xl bg-accent-muted flex items-center justify-center text-[var(--color-accent)]">
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 7a4 4 0 100-8 4 4 0 000 8z" />
                             </svg>
@@ -319,13 +309,13 @@ export default function Navbar() {
               <>
                 <Link
                   to="/login"
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900 transition"
+                  className="px-3 py-1.5 rounded-xl text-sm font-medium border border-[color:var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-bg-muted)] transition"
                 >
                   Iniciar sesión
                 </Link>
                 <Link
                   to="/register"
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition"
+                  className="px-3 py-1.5 rounded-xl text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 shadow-sm dark:shadow-glow-sm transition"
                 >
                   Registrarse
                 </Link>

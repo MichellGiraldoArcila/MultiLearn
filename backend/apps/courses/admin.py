@@ -6,7 +6,7 @@ from .models import Course, Favorite, UserInteraction
 class CourseAdmin(admin.ModelAdmin):
     list_display = ('title', 'platform', 'category', 'level', 'rating', 'created_at')
     list_filter = ('platform', 'category', 'level')
-    search_fields = ('title', 'description', 'instructor')
+    search_fields = ('title', 'description', 'instructor', 'video_url')
 
 
 @admin.register(Favorite)

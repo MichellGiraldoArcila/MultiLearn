@@ -4,12 +4,15 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { auth } from '../services/api';
+import { getApiErrorMessage } from '../utils/apiError';
 import AuthCard from '../components/auth/AuthCard';
 import InputField from '../components/auth/InputField';
 import PasswordInput from '../components/auth/PasswordInput';
 import PasswordStrengthBar from '../components/auth/PasswordStrengthBar';
 import PasswordChecklist from '../components/auth/PasswordChecklist';
 import PageContainer from '../components/layout/PageContainer';
+import InterestChipPicker from '../components/preferences/InterestChipPicker';
+import { LEVEL_OPTIONS, defaultPreferences } from '../constants/preferences';
 
 const registerSchema = z.object({
   name: z.string().min(1, 'Nombre es requerido'),
@@ -25,6 +28,7 @@ const registerSchema = z.object({
 export default function Register() {
   const navigate = useNavigate();
   const [serverError, setServerError] = useState('');
+  const [prefs, setPrefs] = useState(() => defaultPreferences());
 
   const {
     control,
@@ -46,15 +50,19 @@ export default function Register() {
   const onSubmit = async (values) => {
     setServerError('');
     try {
-      await auth.register(values);
+      await auth.register({
+        name: values.name,
+        email: values.email,
+        password: values.password,
+        preferences: {
+          interests: prefs.interests,
+          level: prefs.level || '',
+          goal: (prefs.goal || '').trim(),
+        },
+      });
       navigate('/login', { replace: true });
     } catch (err) {
-      const data = err.response?.data;
-      const text =
-        typeof data === 'string'
-          ? data
-          : data?.email?.[0] || data?.password?.[0] || data?.detail || 'Error al registrarse';
-      setServerError(text);
+      setServerError(getApiErrorMessage(err, 'Error al registrarse'));
     }
   };
 
@@ -155,6 +163,47 @@ export default function Register() {
 
           <PasswordStrengthBar password={passwordValue} />
           <PasswordChecklist password={passwordValue} />
+
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-4">
+            <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Preferencias de aprendizaje (opcional)</p>
+            <div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Intereses</p>
+              <InterestChipPicker
+                value={prefs.interests}
+                onChange={(interests) => setPrefs((p) => ({ ...p, interests }))}
+              />
+            </div>
+            <div>
+              <label htmlFor="reg-level" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">
+                Nivel
+              </label>
+              <select
+                id="reg-level"
+                value={prefs.level}
+                onChange={(e) => setPrefs((p) => ({ ...p, level: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                {LEVEL_OPTIONS.map((o) => (
+                  <option key={o.id || 'none'} value={o.id}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="reg-goal" className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">
+                Objetivo
+              </label>
+              <textarea
+                id="reg-goal"
+                rows={2}
+                value={prefs.goal}
+                onChange={(e) => setPrefs((p) => ({ ...p, goal: e.target.value }))}
+                placeholder='Ej. "Ser desarrollador frontend"'
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+              />
+            </div>
+          </div>
 
           <button
             type="submit"

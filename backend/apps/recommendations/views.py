@@ -1,11 +1,13 @@
 """
 GET /api/recommendations/ - Recomendaciones personalizadas (JWT obligatorio).
+GET /api/recommendations/roadmap/ - Roadmap de aprendizaje.
 """
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from .recommendation_engine import get_recommendations_for_user
+from .roadmap import build_learning_roadmap
 from .cache import get_cached_recommendations, set_cached_recommendations
 
 
@@ -35,3 +37,13 @@ class RecommendationsView(APIView):
         }
         set_cached_recommendations(user.id, payload)
         return Response(payload)
+
+
+class LearningRoadmapView(APIView):
+    """GET /api/recommendations/roadmap/ — orden sugerido de cursos según preferencias."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        data = build_learning_roadmap(request.user)
+        return Response(data)

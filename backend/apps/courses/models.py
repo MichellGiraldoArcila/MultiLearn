@@ -16,6 +16,12 @@ class Course(models.Model):
     rating = models.DecimalField('valoración', max_digits=3, decimal_places=2, null=True, blank=True)
     url = models.URLField('enlace', max_length=500, blank=True)
     image_url = models.URLField('imagen', max_length=500, blank=True)
+    video_url = models.URLField(
+        'video (YouTube/Vimeo)',
+        max_length=500,
+        blank=True,
+        help_text='URL del vídeo promocional o introducción (YouTube o Vimeo).',
+    )
     created_at = models.DateTimeField('fecha de creación', auto_now_add=True)
 
     class Meta:

@@ -61,6 +61,16 @@ TEMPLATES = [
     },
 ]
 
+# PostgreSQL: Neon y otros hosts en la nube suelen exigir TLS. Sin sslmode, la conexión
+# falla y los endpoints (p. ej. GET /api/courses/) responden 500.
+_db_host = os.getenv('DB_HOST', '') or ''
+_db_sslmode = os.getenv('DB_SSLMODE', '').strip().lower()
+_db_options = {}
+if _db_sslmode in ('disable', 'allow', 'prefer', 'require', 'verify-ca', 'verify-full'):
+    _db_options['sslmode'] = os.getenv('DB_SSLMODE', '').strip()
+elif 'neon.tech' in _db_host:
+    _db_options['sslmode'] = 'require'
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -69,6 +79,7 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
+        'OPTIONS': _db_options,
     }
 }
 

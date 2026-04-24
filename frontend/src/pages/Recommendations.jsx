@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { recommendations as recApi, courses as coursesApi, favorites as favoritesApi } from '../services/api';
 import CourseCard from '../components/CourseCard';
 import Pagination from '../components/Pagination';
@@ -12,6 +13,7 @@ export default function Recommendations() {
   const [error, setError] = useState(null);
   const [favoritesMap, setFavoritesMap] = useState({}); // courseId -> favoriteId
   const [page, setPage] = useState(1);
+  const [roadmap, setRoadmap] = useState(null);
 
   const fetchFavorites = async () => {
     const token = localStorage.getItem('access_token');
@@ -64,6 +66,14 @@ export default function Recommendations() {
     };
     fetchRec();
     fetchFavorites();
+    (async () => {
+      try {
+        const { data } = await recApi.roadmap();
+        setRoadmap(data);
+      } catch {
+        setRoadmap(null);
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -97,8 +107,41 @@ export default function Recommendations() {
     <PageContainer className="py-8">
       <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2">Recomendaciones para ti</h1>
       <p className="text-slate-600 dark:text-slate-300 mb-8">
-        Cursos sugeridos según tus favoritos e intereses.
+        Cursos sugeridos según favoritos, interacciones y las preferencias de tu perfil.
       </p>
+
+      {roadmap?.steps?.length > 0 && (
+        <section className="mb-10 rounded-2xl border border-[color:var(--color-border)] bg-[var(--color-bg-elevated)] p-5 md:p-6 shadow-[var(--shadow-card)]">
+          <h2 className="text-lg font-semibold text-[var(--color-text)] mb-2">Roadmap de aprendizaje</h2>
+          {roadmap.summary && (
+            <p className="text-sm text-[var(--color-text-muted)] mb-4">{roadmap.summary}</p>
+          )}
+          <ol className="space-y-3">
+            {roadmap.steps.map((step) => (
+              <li
+                key={step.order}
+                className="flex flex-wrap items-start gap-3 rounded-xl border border-[color:var(--color-border)] bg-[var(--color-bg-muted)]/50 px-4 py-3"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-muted text-sm font-bold text-[var(--color-accent)]">
+                  {step.order}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <Link
+                    to={`/courses/${step.course.id}`}
+                    className="font-medium text-[var(--color-text)] hover:text-primary-600 hover:underline"
+                  >
+                    {step.course.title}
+                  </Link>
+                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                    {step.course.platform} · {step.course.category} · {step.course.level}
+                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)] mt-1">{step.reason}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       {error && (
         <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-100 text-sm">
@@ -107,8 +150,15 @@ export default function Recommendations() {
       )}
 
       {data && (!data.recommendations || data.recommendations.length === 0) ? (
-        <div className="text-center py-16 text-slate-500 dark:text-slate-400">
-          <p>Añade algunos cursos a favoritos para recibir recomendaciones personalizadas.</p>
+        <div className="text-center py-16 text-slate-500 dark:text-slate-400 space-y-2">
+          <p>No hay recomendaciones todavía.</p>
+          <p className="text-sm">
+            Marca favoritos o configura intereses y nivel en{' '}
+            <Link to="/profile" className="text-primary-600 hover:underline font-medium">
+              tu perfil
+            </Link>{' '}
+            para mejorar los resultados.
+          </p>
         </div>
       ) : data?.recommendations?.length > 0 ? (
         <>

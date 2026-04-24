@@ -26,12 +26,12 @@ export default function SearchBar({ onSubmit, onQueryChange, placeholder = 'Busc
             onQueryChange?.(next);
           }}
           placeholder={placeholder}
-          className="flex-1 px-3 py-2 rounded-l-xl border border-slate-200 dark:border-slate-800 border-r-0 bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition text-sm dark:text-slate-50 sm:px-4 sm:py-2.5"
+          className="flex-1 px-3 py-2 rounded-l-xl border border-[color:var(--color-border)] border-r-0 bg-[var(--color-bg-muted)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:bg-[var(--color-bg-elevated)] focus:border-primary-500 focus:ring-2 focus:ring-primary-500/25 outline-none transition text-sm sm:px-4 sm:py-2.5"
           aria-label="Buscar cursos"
         />
         <button
           type="submit"
-          className="px-2 py-2 rounded-r-xl border border-l-0 border-slate-200 dark:border-slate-800 bg-transparent text-slate-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition flex items-center justify-center sm:px-3 sm:py-2.5"
+          className="px-2 py-2 rounded-r-xl border border-l-0 border-[color:var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-accent)] hover:bg-[var(--color-accent-muted)] transition flex items-center justify-center sm:px-3 sm:py-2.5"
           aria-label="Buscar"
         >
           <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

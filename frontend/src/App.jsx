@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -9,11 +10,12 @@ import Favorites from './pages/Favorites';
 import Recommendations from './pages/Recommendations';
 import Profile from './pages/Profile';
 import ResetPassword from './pages/ResetPassword';
+import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen w-full overflow-x-hidden bg-gray-50 dark:bg-slate-950">
+      <div className="surface-page min-h-screen w-full overflow-x-hidden">
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
@@ -54,6 +56,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin-dashboard"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
               </ProtectedRoute>
             }
           />

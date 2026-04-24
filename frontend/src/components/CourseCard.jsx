@@ -37,8 +37,8 @@ function resolveCourseImage(course) {
 function placeholderDataUri({ title = 'Curso', platform = '' } = {}) {
   const safeTitle = (title || '').slice(0, 30);
   const safePlatform = (platform || '').slice(0, 20);
-  const bg1 = '#0ea5e9';
-  const bg2 = '#0284c7';
+  const bg1 = '#00ff88';
+  const bg2 = '#047857';
   const textColor = '#ffffff';
 
   const svg = `
@@ -111,13 +111,13 @@ export default function CourseCard({
   const ratingText = ratingValue != null ? ratingValue.toFixed(1) : '—';
   const filledStars = ratingValue != null ? Math.max(0, Math.min(5, Math.round(ratingValue))) : 0;
   const favoriteButtonClass = localIsFavorite
-    ? 'p-1.5 sm:p-2 rounded-xl border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 bg-red-50/60 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 hover:border-red-300 transition disabled:opacity-50'
-    : 'p-1.5 sm:p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-red-500 hover:border-red-200 transition disabled:opacity-50';
+    ? 'p-1.5 sm:p-2 rounded-xl border border-red-400/50 text-red-600 dark:text-red-400 bg-red-500/10 hover:bg-red-500/20 transition disabled:opacity-50'
+    : 'p-1.5 sm:p-2 rounded-xl border border-[color:var(--color-border)] text-[var(--color-text-muted)] hover:text-red-500 hover:border-red-400/40 hover:bg-[var(--color-bg-muted)] transition disabled:opacity-50';
 
   return (
-    <article className="w-full max-w-sm mx-auto min-w-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5">
+    <article className="surface-card w-full max-w-sm mx-auto min-w-0 overflow-hidden hover:-translate-y-1">
       <Link to={`/courses/${course.id}`} className="block group">
-        <div className="w-full h-40 bg-slate-100 dark:bg-slate-800 relative">
+        <div className="w-full h-40 bg-[var(--color-bg-muted)] relative border-b border-[color:var(--color-border)]">
           <img
             src={imageUrl}
             alt={course.title ? `Imagen de ${course.title}` : 'Imagen del curso'}
@@ -141,21 +141,21 @@ export default function CourseCard({
               img.src = placeholderDataUri({ title: course?.title, platform: course?.platform });
             }}
           />
-          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-white/90 dark:bg-slate-900/80 text-xs font-medium text-slate-700 dark:text-slate-200 break-words whitespace-normal max-w-full">
+          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-[var(--color-bg-elevated)]/95 border border-[color:var(--color-border)] text-xs font-medium text-[var(--color-text)] break-words whitespace-normal max-w-full">
             {course.platform}
           </span>
           {showScore != null && (
-            <span className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-primary-600 text-white text-xs font-medium break-words whitespace-normal max-w-full">
+            <span className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-primary-600 text-white text-xs font-medium shadow-sm dark:shadow-glow-sm break-words whitespace-normal max-w-full">
               Relevancia {Number(showScore).toFixed(2)}
             </span>
           )}
         </div>
         <div className="p-3 sm:p-4">
-          <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-1 leading-snug break-words text-sm sm:text-base">
+          <h3 className="font-semibold text-[var(--color-text)] mb-1 leading-snug break-words text-sm sm:text-base">
             {course.title}
           </h3>
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-amber-500 text-xs sm:text-sm">
+            <div className="flex items-center gap-2 text-amber-500 dark:text-amber-400 text-xs sm:text-sm">
               <div className="flex items-center gap-0.5" aria-label={`Rating ${ratingText}`}>
                 {Array.from({ length: 5 }).map((_, idx) => {
                   const starIndex = idx + 1;
@@ -178,16 +178,16 @@ export default function CourseCard({
                   );
                 })}
               </div>
-              <span className="text-slate-600 dark:text-slate-200 text-xs sm:text-sm">{ratingText}</span>
+              <span className="text-[var(--color-text-muted)] text-xs sm:text-sm">{ratingText}</span>
             </div>
           </div>
         </div>
       </Link>
 
-      <div className="px-3 pb-3 sm:px-4 sm:pb-4 flex gap-2">
+      <div className="px-3 pb-3 sm:px-4 sm:pb-4 flex gap-2 border-t border-[color:var(--color-border)] pt-3 bg-[var(--color-bg-muted)]/50">
         <Link
           to={`/courses/${course.id}`}
-          className="flex-1 py-2 text-center rounded-xl text-xs sm:text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition active:scale-[0.99]"
+          className="flex-1 py-2 text-center rounded-xl text-xs sm:text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 shadow-sm dark:shadow-glow-sm transition active:scale-[0.99]"
         >
           Ver curso
         </Link>

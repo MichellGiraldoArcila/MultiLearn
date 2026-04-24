@@ -1,7 +1,7 @@
 export default function AuthCard({ title, subtitle, children }) {
   return (
-    <div className="w-full max-w-md mx-auto mt-20 px-0">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-700 p-8 backdrop-blur-md bg-white/80 dark:bg-slate-900/80">
+    <div className="w-full max-w-md mx-auto mt-20 px-4 sm:px-6 lg:px-8">
+      <div className="rounded-2xl border border-gray-100 dark:border-slate-700 bg-white/80 p-8 shadow-xl backdrop-blur-md dark:bg-slate-900/80">
         {title && (
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white text-center">{title}</h1>
         )}

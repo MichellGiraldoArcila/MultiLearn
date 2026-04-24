@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { auth } from '../services/api';
+import { getApiErrorMessage } from '../utils/apiError';
 import AuthCard from '../components/auth/AuthCard';
 import InputField from '../components/auth/InputField';
 import PasswordInput from '../components/auth/PasswordInput';
@@ -38,23 +39,16 @@ export default function Login() {
     setServerError('');
     try {
       const { data } = await auth.login(values.email, values.password);
+      if (!data?.access || !data?.refresh) {
+        setServerError('Respuesta del servidor incompleta. No se recibieron tokens.');
+        return;
+      }
       localStorage.setItem('access_token', data.access);
       localStorage.setItem('refresh_token', data.refresh);
       const next = from && from !== '/' ? from : '/dashboard';
       navigate(next, { replace: true });
-      window.location.reload();
     } catch (err) {
-      const status = err.response?.status;
-      if (status === 401) {
-        setServerError(err.response?.data?.detail || 'Usuario o contraseña incorrectos');
-      } else {
-        setServerError(
-          err.response?.data?.detail ||
-            err.response?.data?.email?.[0] ||
-            err.response?.data?.password?.[0] ||
-            'Error al iniciar sesión'
-        );
-      }
+      setServerError(getApiErrorMessage(err, 'Error al iniciar sesión'));
     }
   };
 

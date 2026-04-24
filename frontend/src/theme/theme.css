@@ -1,0 +1,79 @@
+/**
+ * Tokens semánticos: combinan con Tailwind (darkMode: 'class').
+ * Modo oscuro: fondo negro, acentos neón verde.
+ * Modo claro: grises suaves + mismo verde como marca.
+ */
+:root {
+  --color-bg-page: #f4f7f5;
+  --color-bg-elevated: #ffffff;
+  --color-bg-muted: #eef2ef;
+  --color-border: rgba(15, 118, 110, 0.12);
+  --color-border-accent: rgba(0, 200, 120, 0.35);
+  --color-accent: #00e070;
+  --color-accent-bright: #00ff88;
+  --color-accent-muted: rgba(0, 255, 136, 0.1);
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-header-bg: rgba(255, 255, 255, 0.85);
+  --shadow-card: 0 4px 24px rgba(15, 118, 110, 0.06);
+  --shadow-glow: none;
+  --radius-tech: 1rem;
+}
+
+.dark {
+  --color-bg-page: #000000;
+  --color-bg-elevated: #050505;
+  --color-bg-muted: #0a0f0c;
+  --color-border: rgba(0, 255, 136, 0.22);
+  --color-border-accent: rgba(0, 255, 136, 0.55);
+  --color-accent: #00ff88;
+  --color-accent-bright: #5fffb4;
+  --color-accent-muted: rgba(0, 255, 136, 0.09);
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-header-bg: rgba(0, 0, 0, 0.75);
+  --shadow-card: 0 0 0 1px rgba(0, 255, 136, 0.12), 0 12px 40px rgba(0, 0, 0, 0.55);
+  --shadow-glow: 0 0 28px rgba(0, 255, 136, 0.14);
+}
+
+@layer components {
+  .surface-page {
+    background-color: var(--color-bg-page);
+    color: var(--color-text);
+  }
+
+  .surface-card {
+    background-color: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-tech);
+    box-shadow: var(--shadow-card);
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.25s ease,
+      transform 0.2s ease;
+  }
+
+  .surface-card:hover {
+    border-color: var(--color-border-accent);
+  }
+
+  .dark .surface-card:hover {
+    box-shadow: var(--shadow-card), var(--shadow-glow);
+  }
+
+  .tech-border {
+    border-color: var(--color-border);
+  }
+
+  .tech-border-accent {
+    border-color: var(--color-border-accent);
+  }
+
+  .text-accent {
+    color: var(--color-accent);
+  }
+
+  .bg-accent-muted {
+    background-color: var(--color-accent-muted);
+  }
+}

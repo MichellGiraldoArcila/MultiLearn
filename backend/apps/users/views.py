@@ -3,6 +3,7 @@ Vistas de autenticación: registro, login (JWT), refresh.
 """
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.permissions import IsAuthenticated
 from .models import User
@@ -40,13 +41,22 @@ class RefreshView(TokenRefreshView):
     """POST /api/auth/refresh - Refrescar access token."""
 
 
-class MeView(generics.RetrieveAPIView):
-    """GET /api/auth/me - Devuelve el perfil del usuario autenticado."""
+class MeView(generics.RetrieveUpdateAPIView):
+    """GET/PATCH /api/auth/me — perfil y preferencias (JSON)."""
     permission_classes = [IsAuthenticated]
     serializer_class = UserProfileSerializer
 
     def get_object(self):
         return self.request.user
+
+
+class AdminStatusView(APIView):
+    """GET /api/auth/admin-status — comprueba si el usuario tiene permisos de staff."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({'is_staff': bool(request.user.is_staff)})
 
 
 class ChangePasswordView(generics.GenericAPIView):

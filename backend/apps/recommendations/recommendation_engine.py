@@ -1,17 +1,23 @@
 """
-Motor de recomendaciones híbrido:
-  score = 0.6 * similarity_score + 0.3 * category_preference + 0.1 * popularity_score
+Motor de recomendaciones híbrido (interacciones + preferencias explícitas):
+  score = w_sim * sim + w_cat * cat + w_pop * pop + w_lvl * level + w_goal * goal
 """
 from collections import Counter
-from django.db.models import Count
+
+from django.db.models import Count, Q
 
 from apps.courses.models import Course, Favorite, UserInteraction
 from apps.search.search_engine import get_similarity_to_favorites
+from apps.users.preferences_schema import default_preferences
 
-# Pesos del algoritmo híbrido
-WEIGHT_SIMILARITY = 0.6
-WEIGHT_CATEGORY = 0.3
-WEIGHT_POPULARITY = 0.1
+WEIGHT_SIMILARITY = 0.52
+WEIGHT_CATEGORY = 0.30
+WEIGHT_POPULARITY = 0.10
+WEIGHT_LEVEL = 0.05
+WEIGHT_GOAL = 0.03
+
+BLEND_IMPLICIT = 0.55
+BLEND_EXPLICIT = 0.45
 
 MAX_RECOMMENDATIONS = 10
 
@@ -21,17 +27,13 @@ def _get_user_favorite_course_ids(user):
 
 
 def _get_category_preference_weights(user):
-    """
-    Categorías más frecuentes en favoritos e interacciones del usuario.
-    Devuelve dict category_lower -> peso en [0, 1].
-    """
     fav_cats = list(
-        Favorite.objects.filter(user=user)
-        .values_list('course__category', flat=True)
+        Favorite.objects.filter(user=user).values_list('course__category', flat=True)
     )
     view_cats = list(
-        UserInteraction.objects.filter(user=user, interaction_type='view')
-        .values_list('course__category', flat=True)
+        UserInteraction.objects.filter(user=user, interaction_type='view').values_list(
+            'course__category', flat=True
+        )
     )
     counts = Counter((c or '').strip().lower() for c in fav_cats + view_cats if c)
     if not counts:
@@ -40,11 +42,91 @@ def _get_category_preference_weights(user):
     return {cat: count / total for cat, count in counts.items()}
 
 
+def _explicit_category_weights(user):
+    prefs = user.preferences or default_preferences()
+    tags = prefs.get('interests') or []
+    if not tags:
+        return {}
+    n = len(tags)
+    return {str(t).lower().strip(): 1.0 / n for t in tags}
+
+
+def _blend_category_weights(implicit, explicit):
+    if not implicit:
+        return explicit
+    if not explicit:
+        return implicit
+    keys = set(implicit) | set(explicit)
+    out = {}
+    for k in keys:
+        out[k] = BLEND_IMPLICIT * implicit.get(k, 0.0) + BLEND_EXPLICIT * explicit.get(k, 0.0)
+    s = sum(out.values())
+    if s <= 0:
+        return implicit
+    for k in out:
+        out[k] /= s
+    return out
+
+
+def _course_explicit_category_score(course, explicit_w):
+    if not explicit_w:
+        return 0.0
+    cat_key = (course.category or '').strip().lower()
+    if cat_key in explicit_w:
+        return explicit_w[cat_key]
+    best = 0.0
+    for tag, w in explicit_w.items():
+        if tag in cat_key or cat_key in tag:
+            best = max(best, w * 0.85)
+    return best
+
+
+def _norm_course_level(course):
+    l = (course.level or '').lower()
+    if 'begin' in l:
+        return 1
+    if 'inter' in l:
+        return 2
+    if 'advanc' in l:
+        return 3
+    return 2
+
+
+def _norm_user_level(prefs):
+    ul = (prefs.get('level') or '').lower()
+    if ul == 'beginner':
+        return 1
+    if ul == 'intermediate':
+        return 2
+    if ul == 'advanced':
+        return 3
+    return 0
+
+
+def _level_match_score(user, course):
+    prefs = user.preferences or default_preferences()
+    u = _norm_user_level(prefs)
+    c = _norm_course_level(course)
+    if u == 0:
+        return 0.5
+    diff = abs(u - c)
+    return max(0.0, 1.0 - 0.35 * diff)
+
+
+def _goal_match_score(user, course):
+    prefs = user.preferences or default_preferences()
+    goal = (prefs.get('goal') or '').strip().lower()
+    if len(goal) < 3:
+        return 0.0
+    tokens = [t for t in goal.replace(',', ' ').split() if len(t) > 2]
+    if not tokens:
+        return 0.0
+    blob = f'{(course.title or "")} {(course.description or "")} {(course.category or "")}'.lower()
+    hits = sum(1 for t in tokens if t in blob)
+    return min(1.0, hits / max(len(tokens), 1))
+
+
 def _get_popularity_scores():
-    """
-    Por cada curso: combinación de rating (0-1) y número de visualizaciones (0-1).
-    Devuelve dict course_id -> score en [0, 1].
-    """
     view_counts = dict(
         UserInteraction.objects.filter(interaction_type='view')
         .values('course_id')
@@ -62,31 +144,60 @@ def _get_popularity_scores():
     return result
 
 
-def get_recommendations_for_user(user):
-    """
-    Devuelve lista de (course, score) ordenada por score descendente, máx 10.
-    Excluye cursos que el usuario ya tiene en favoritos.
-    """
-    favorite_ids = set(_get_user_favorite_course_ids(user))
-
-    # Usuario nuevo: sin favoritos → cursos más populares por rating
-    if not favorite_ids:
-        courses = (
-            Course.objects.exclude(id__in=favorite_ids)
-            .order_by('-rating')
-            .only('id', 'title', 'platform', 'rating')[:MAX_RECOMMENDATIONS]
+def _cold_start_with_preferences(user, favorite_ids, pop_scores):
+    """Sin favoritos: prioriza categorías de intereses y popularidad."""
+    prefs = user.preferences or default_preferences()
+    tags = [str(t).lower().strip() for t in (prefs.get('interests') or [])]
+    base_qs = Course.objects.exclude(id__in=favorite_ids)
+    qs = base_qs
+    if tags:
+        q_obj = Q()
+        for t in tags:
+            q_obj |= Q(category__icontains=t)
+        filtered = base_qs.filter(q_obj)
+        if filtered.exists():
+            qs = filtered
+    explicit_w = _explicit_category_weights(user)
+    scored = []
+    for course in qs:
+        cat_part = _course_explicit_category_score(course, explicit_w) if explicit_w else 0.3
+        pop = pop_scores.get(course.id, 0.0)
+        lvl = _level_match_score(user, course)
+        goal = _goal_match_score(user, course)
+        score = (
+            0.45 * cat_part
+            + 0.40 * pop
+            + 0.10 * lvl
+            + 0.05 * goal
+        )
+        scored.append((course, score))
+    scored.sort(key=lambda x: -x[1])
+    if not scored:
+        courses = list(
+            Course.objects.exclude(id__in=favorite_ids).order_by('-rating')[:MAX_RECOMMENDATIONS]
         )
         return [(c, float(c.rating or 0)) for c in courses]
+    return scored[:MAX_RECOMMENDATIONS]
 
-    # Híbrido: similarity + category + popularity
+
+def get_recommendations_for_user(user):
+    """
+    Lista de (course, score) ordenada por score descendente, máx 10.
+    """
+    favorite_ids = set(_get_user_favorite_course_ids(user))
+    pop_scores = _get_popularity_scores()
+
+    if not favorite_ids:
+        return _cold_start_with_preferences(user, favorite_ids, pop_scores)
+
     sim_scores = get_similarity_to_favorites(
         list(favorite_ids),
         exclude_course_ids=list(favorite_ids),
     )
-    cat_weights = _get_category_preference_weights(user)
-    pop_scores = _get_popularity_scores()
+    implicit_cat = _get_category_preference_weights(user)
+    explicit_cat = _explicit_category_weights(user)
+    cat_weights = _blend_category_weights(implicit_cat, explicit_cat)
 
-    # Normalizar similarity a [0,1] si hay valores
     sim_values = list(sim_scores.values())
     max_sim = max(sim_values) if sim_values else 1.0
 
@@ -98,12 +209,18 @@ def get_recommendations_for_user(user):
             continue
         cat_key = (course.category or '').strip().lower()
         cat_score = cat_weights.get(cat_key, 0.0)
+        if cat_score == 0.0 and explicit_cat:
+            cat_score = _course_explicit_category_score(course, explicit_cat)
         pop = pop_scores.get(course_id, 0.0)
         sim_norm = sim / max_sim if max_sim else 0.0
+        lvl = _level_match_score(user, course)
+        goal = _goal_match_score(user, course)
         score = (
             WEIGHT_SIMILARITY * sim_norm
             + WEIGHT_CATEGORY * cat_score
             + WEIGHT_POPULARITY * pop
+            + WEIGHT_LEVEL * lvl
+            + WEIGHT_GOAL * goal
         )
         scored.append((course, score))
 
