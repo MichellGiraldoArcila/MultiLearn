@@ -1,8 +1,9 @@
 import axios from 'axios';
 
+// Dev: baseURL vacío usa el proxy de Vite (/api → Django en 127.0.0.1:8000). Prod sin env: Render.
 const baseURL =
   import.meta.env.VITE_API_URL ||
-  'https://multilearn-backend.onrender.com';
+  (import.meta.env.DEV ? '' : 'https://multilearn-backend.onrender.com');
 
 export const api = axios.create({
   baseURL,
@@ -123,8 +124,11 @@ export const auth = {
 };
 
 export const courses = {
-  list: (params) => api.get('/api/courses/', { params }),
-  detail: (id) => api.get(`/api/courses/${id}/`),
+  list: (params) => {
+    const { signal, ...rest } = params || {};
+    return api.get('/api/courses/', { params: rest, signal });
+  },
+  detail: (id, { signal } = {}) => api.get(`/api/courses/${id}/`, { signal }),
 };
 
 export const adminCourses = {
@@ -137,7 +141,10 @@ export const adminCourses = {
 
 export const search = {
   query: (q, params = {}) =>
-    api.get('/api/search/', { params: { q, ...params } }),
+    (() => {
+      const { signal, ...rest } = params || {};
+      return api.get('/api/search/', { params: { q, ...rest }, signal });
+    })(),
 };
 
 export const favorites = {

@@ -122,7 +122,7 @@ export default function CourseCard({
             src={imageUrl}
             alt={course.title ? `Imagen de ${course.title}` : 'Imagen del curso'}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-            loading="eager"
+            loading="lazy"
             referrerPolicy="no-referrer"
             onError={(e) => {
               const img = e.currentTarget;

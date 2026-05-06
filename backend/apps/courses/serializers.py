@@ -51,6 +51,26 @@ class CourseSerializer(serializers.ModelSerializer):
         return url
 
 
+class CourseListSerializer(serializers.ModelSerializer):
+    """
+    Serializer liviano para listados/paginación.
+    Reduce payload para mejorar latencia y render en frontend.
+    """
+
+    class Meta:
+        model = Course
+        fields = (
+            'id',
+            'title',
+            'platform',
+            'category',
+            'level',
+            'rating',
+            'image_url',
+            'video_url',
+        )
+
+
 class FavoriteSerializer(serializers.ModelSerializer):
     course = CourseSerializer(read_only=True)
     # Entrada para el POST (el frontend envía course: <id>)

@@ -3,6 +3,7 @@ Modelos Course y Favorite.
 """
 from django.conf import settings
 from django.db import models
+from django.db.models.functions import Lower
 
 
 class Course(models.Model):
@@ -28,6 +29,14 @@ class Course(models.Model):
         verbose_name = 'curso'
         verbose_name_plural = 'cursos'
         ordering = ['-created_at']
+        indexes = [
+            # ordering / paginación
+            models.Index(fields=['-created_at'], name='course_created_at_desc'),
+            # filtros case-insensitive (iexact) -> índices funcionales
+            models.Index(Lower('category'), name='course_category_lower_idx'),
+            models.Index(Lower('platform'), name='course_platform_lower_idx'),
+            models.Index(Lower('level'), name='course_level_lower_idx'),
+        ]
 
     def __str__(self):
         return self.title

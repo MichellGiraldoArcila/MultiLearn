@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { courses as coursesApi, search as searchApi, favorites as favoritesApi } from '../services/api';
+import { favorites as favoritesApi } from '../services/api';
 import CourseCard from '../components/CourseCard';
 import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
 import PageContainer from '../components/layout/PageContainer';
+import { useQueryClient } from '@tanstack/react-query';
+import { coursesQueryOptions, useCoursesQuery } from '../hooks/useCoursesQuery';
 
 const CATEGORIES = ['programming', 'design', 'cooking', 'music', 'business'];
 const PLATFORMS = ['Udemy', 'Coursera', 'Platzi', 'edX'];
@@ -12,14 +14,12 @@ const PAGE_SIZE = 20;
 
 export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
   const queryFromUrl = searchParams.get('q') || '';
   const [searchInput, setSearchInput] = useState(queryFromUrl);
   const [searchQuery, setSearchQuery] = useState(queryFromUrl);
   const [category, setCategory] = useState(searchParams.get('category') || '');
   const [platform, setPlatform] = useState(searchParams.get('platform') || '');
-  const [courses, setCourses] = useState([]);
-  const [count, setCount] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [favoritesMap, setFavoritesMap] = useState({}); // courseId -> favoriteId
   const pageFromUrl = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
@@ -61,40 +61,47 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const coursesQuery = useCoursesQuery({
+    q: searchQuery,
+    category,
+    platform,
+    page: pageFromUrl,
+    pageSize: PAGE_SIZE,
+  });
+
+  const courses = coursesQuery.data?.results ?? [];
+  const count = coursesQuery.data?.count ?? 0;
+  const loading = coursesQuery.isLoading;
+
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    if (!coursesQuery.error) {
       setError(null);
-      try {
-        if (searchQuery.trim()) {
-          const { data } = await searchApi.query(searchQuery.trim(), {
-            category: category || undefined,
-            platform: platform || undefined,
-            page: pageFromUrl,
-            page_size: PAGE_SIZE,
-          });
-          setCourses(data.results || []);
-          setCount(data.count || 0);
-        } else {
-          const { data } = await coursesApi.list({
-            category: category || undefined,
-            platform: platform || undefined,
-            page: pageFromUrl,
-            page_size: PAGE_SIZE,
-          });
-          setCourses(data.results || []);
-          setCount(data.count || 0);
-        }
-      } catch (err) {
-        setError(err.response?.data?.detail || err.message || 'Error al cargar cursos');
-        setCourses([]);
-        setCount(0);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [searchQuery, category, platform, pageFromUrl]);
+      return;
+    }
+    const err = coursesQuery.error;
+    setError(err?.response?.data?.detail || err?.message || 'Error al cargar cursos');
+  }, [coursesQuery.error]);
+
+  const totalPages = useMemo(() => {
+    if (!count || count <= 0) return 0;
+    return Math.max(1, Math.ceil(count / PAGE_SIZE));
+  }, [count]);
+
+  // Prefetch automático de la página siguiente (N+1).
+  useEffect(() => {
+    if (!totalPages || pageFromUrl >= totalPages) return;
+    const nextPage = pageFromUrl + 1;
+
+    queryClient.prefetchQuery(
+      coursesQueryOptions({
+        q: searchQuery,
+        category,
+        platform,
+        page: nextPage,
+        pageSize: PAGE_SIZE,
+      })
+    );
+  }, [queryClient, totalPages, pageFromUrl, searchQuery, category, platform]);
 
   const syncQInUrl = (q, { resetPage = false } = {}) => {
     const next = new URLSearchParams(searchParamsRef.current);
