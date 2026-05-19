@@ -1,40 +1,17 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import SearchBar from './SearchBar';
+import BrandLogo from './BrandLogo';
 import ThemeToggle from './ui/ThemeToggle';
 import { auth as authApi } from '../services/api';
 import { applyTheme, getStoredTheme, toggleThemeId } from '../theme/theme';
 
 function Brand() {
   return (
-    <div className="flex items-center gap-3 shrink-0">
-      <div className="w-10 h-10 rounded-2xl bg-accent-muted border border-[color:var(--color-border-accent)] dark:shadow-glow-sm flex items-center justify-center text-[var(--color-accent)]">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path
-            d="M9.5 3.5c-2 0-3.5 1.5-3.5 3.5v.4c-1.2.5-2 1.7-2 3v1c0 1.3.8 2.5 2 3v.4c0 2 1.5 3.5 3.5 3.5H14.5c2 0 3.5-1.5 3.5-3.5v-.4c1.2-.5 2-1.7 2-3v-1c0-1.3-.8-2.5-2-3V7c0-2-1.5-3.5-3.5-3.5H9.5Z"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M9 8.6c0-1.1.9-2 2-2h1.2c1.1 0 2 .9 2 2v.2c0 .8-.5 1.5-1.2 1.8l-.6.2c-.4.1-.7.5-.7.9V13"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-          <path
-            d="M12 16.8h.01"
-            stroke="currentColor"
-            strokeWidth="3"
-            strokeLinecap="round"
-          />
-        </svg>
-      </div>
-      <div className="leading-tight">
-        <div className="text-lg sm:text-xl font-bold text-[var(--color-text)]">
-          MultiLearn
-        </div>
-        <div className="hidden sm:block text-xs text-[var(--color-text-muted)]">
+    <div className="flex items-center gap-3 shrink-0 min-w-0">
+      <BrandLogo variant="nav" className="rounded-lg bg-white px-1 py-0.5" />
+      <div className="hidden sm:block leading-tight min-w-0">
+        <div className="text-xs text-[var(--color-text-muted)] whitespace-normal">
           Aprende sin límites, en un solo lugar
         </div>
       </div>

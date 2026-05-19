@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import AuthCard from '../components/auth/AuthCard';
 import ResetPasswordForm from '../components/auth/ResetPasswordForm';
 import PageContainer from '../components/layout/PageContainer';
+import AuthPageLogo from '../components/AuthPageLogo';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function ResetPassword() {
       className="min-h-screen bg-gray-50 dark:bg-gradient-to-br from-slate-900 to-slate-800 flex items-start justify-center pt-20 pb-12"
     >
       <AuthCard>
+        <AuthPageLogo />
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 text-center">Reset contraseña</h1>
         <p className="text-slate-600 dark:text-slate-300 mb-6 text-center text-sm">
           Ingresa tu correo y crea una nueva contraseña segura.

@@ -11,6 +11,7 @@ import PasswordInput from '../components/auth/PasswordInput';
 import PasswordStrengthBar from '../components/auth/PasswordStrengthBar';
 import PasswordChecklist from '../components/auth/PasswordChecklist';
 import PageContainer from '../components/layout/PageContainer';
+import AuthPageLogo from '../components/AuthPageLogo';
 import InterestChipPicker from '../components/preferences/InterestChipPicker';
 import { LEVEL_OPTIONS, defaultPreferences } from '../constants/preferences';
 
@@ -73,32 +74,7 @@ export default function Register() {
       className="min-h-screen bg-gray-50 dark:bg-gradient-to-br from-slate-900 to-slate-800 flex items-start justify-center pt-20 pb-12"
     >
       <AuthCard>
-        <div className="flex items-center justify-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-primary-600/10 dark:bg-primary-600/20 border border-primary-600/30 flex items-center justify-center">
-            <svg
-              width="26"
-              height="26"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-              className="text-primary-600 dark:text-primary-300"
-            >
-              <path
-                d="M9.5 3.5c-2 0-3.5 1.5-3.5 3.5v.4c-1.2.5-2 1.7-2 3v1c0 1.3.8 2.5 2 3v.4c0 2 1.5 3.5 3.5 3.5H14.5c2 0 3.5-1.5 3.5-3.5v-.4c1.2-.5 2-1.7 2-3v-1c0-1.3-.8-2.5-2-3V7c0-2-1.5-3.5-3.5-3.5H9.5Z"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M9 8.6c0-1.1.9-2 2-2h1.2c1.1 0 2 .9 2 2v.2c0 .8-.5 1.5-1.2 1.8l-.6.2c-.4.1-.7.5-.7.9V13"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-              <path d="M12 16.8h.01" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-            </svg>
-          </div>
-        </div>
+        <AuthPageLogo />
 
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 text-center">Crear cuenta</h1>
         <p className="text-slate-600 dark:text-slate-300 mb-6 text-center text-sm">
